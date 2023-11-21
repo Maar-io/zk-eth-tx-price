@@ -13,7 +13,7 @@ app.use(express.static("public"));
 // Add CORS and proxy middleware
 app.use(cors());
 app.use('/api', createProxyMiddleware({
-  target: 'http://localhost:3000', // replace with the API you're making requests to
+  target: 'https://api.coingecko.com/', // replace with the API you're making requests to
   changeOrigin: true,
 }));
 

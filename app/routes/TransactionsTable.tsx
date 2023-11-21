@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const ETHERSCAN_API_KEY = ""; // replace with your Etherscan API key
-const ADDRESS = ""; // replace with your Ethereum address
+const ETHERSCAN_API_KEY = "";
+const ADDRESS = "";
 
 async function getTransactions() {
     console.log("ETHERSCAN_API_KEY set:", !!ETHERSCAN_API_KEY);
