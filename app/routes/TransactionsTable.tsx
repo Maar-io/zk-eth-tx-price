@@ -28,18 +28,18 @@ async function getGecko() {
   }
   getData();
 }
+const transactionData: {
+  hash: string;
+  shortHash: string;
+  date: string;
+  gasPrice: string;
+  gasUsed: string;
+  txCostUSD: number;
+  totalCost: number;
+}[] = [];
 
-async function getTransactionData() {
+async function getTransactionData(updateData) {
   const transactions = await getTransactions();
-  const transactionData: {
-    hash: string;
-    shortHash: string;
-    date: string;
-    gasPrice: string;
-    gasUsed: string;
-    txCostUSD: number;
-    totalCost: number;
-  }[] = [];
   let totalCost: number = 0;
   for (const transaction of transactions) {
     const dateObject = new Date(transaction.timeStamp * 1000);
@@ -56,7 +56,7 @@ async function getTransactionData() {
     totalCost += txCostUSD;
     const shortHash = transaction.hash.slice(0, 4) + '...' + transaction.hash.slice(-4);
     console.log(`Transaction ${shortHash} on ${date} cost ${txCostUSD} USD`);
-    transactionData.push({
+    const transactionData = {
         hash: transaction.hash,
         shortHash,
         date,
@@ -64,7 +64,9 @@ async function getTransactionData() {
         gasUsed: gasUsed.toString(),
         txCostUSD,
         totalCost
-    });
+      };
+        updateData(transactionData);
+
   }
   return transactionData;
 }
@@ -73,7 +75,9 @@ function TransactionsTable() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    getTransactionData().then(setData);
+    getTransactionData((transactionData) => {
+      setData((prevData) => [...prevData, transactionData]);
+    });
   }, []);
 
   return (
