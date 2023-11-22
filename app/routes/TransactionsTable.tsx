@@ -2,19 +2,22 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const ETHERSCAN_API_KEY = "";
+
 const ADDRESS = "";
 
 async function getTransactions() {
-    console.log("ETHERSCAN_API_KEY set:", !!ETHERSCAN_API_KEY);
-
-    const response = await axios.get(`https://api.etherscan.io/api?module=account&action=txlist&address=${ADDRESS}&startblock=0&endblock=99999999&sort=asc&apikey=${ETHERSCAN_API_KEY}`);
-    return response.data.result;
+  const response = await axios.get(
+    `https://zkatana.blockscout.com/api/v2/addresses/0xC779CEB0853fa7AB6a38c587c1CFC702e4603d9B/transactions?filter=to%20%7C%20from`
+  );
+  console.log("response", response.data.items);
+  return response.data.items;
 }
 
 async function getHistoricalPrice(date: string) {
-    const response = await axios.get(`https://api.coingecko.com/api/v3/coins/ethereum/history?date=${date}`);
-    return response.data.market_data.current_price.usd;
+  const response = await axios.get(
+    `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${date}`
+  );
+  return response.data.market_data.current_price.usd;
 }
 
 async function getGecko() {
@@ -28,7 +31,7 @@ async function getGecko() {
   }
   getData();
 }
-const transactionData: {
+interface TransactionData {
   hash: string;
   shortHash: string;
   date: string;
@@ -36,39 +39,43 @@ const transactionData: {
   gasUsed: string;
   txCostUSD: number;
   totalCost: number;
-}[] = [];
+}
 
-async function getTransactionData(updateData) {
+async function getTransactionData(
+  updateData: (data: TransactionData) => void
+): Promise<void> {
   const transactions = await getTransactions();
   let totalCost: number = 0;
-  for (const transaction of transactions) {
-    const dateObject = new Date(transaction.timeStamp * 1000);
+  transactions.forEach(async (transaction) => {
+
+    const dateObject = new Date(transaction.timestamp);
     const day = String(dateObject.getDate()).padStart(2, "0");
     const month = String(dateObject.getMonth() + 1).padStart(2, "0"); // January is 0!
     const year = dateObject.getFullYear();
     const date = `${day}-${month}-${year}`;
-    const price_usd = await new Promise<number>((resolve) =>
-        setTimeout(() => resolve(getHistoricalPrice(date)), 2000)
-    );
-    const gasUsed = transaction.gasUsed;
-    const gasPrice = transaction.gasPrice;
-    const txCostUSD = gasUsed * gasPrice * price_usd / 1e18;
+    // const price_usd = await new Promise<number>((resolve) =>
+    //   setTimeout(() => resolve(getHistoricalPrice(date)), 2000)
+    // );
+    const price_usd = 2000;
+    const gasUsed = transaction.gas_used;
+    const gasPrice = transaction.gas_price;
+    const txCostUSD = (gasUsed * gasPrice * price_usd) / 1e18;
     totalCost += txCostUSD;
-    const shortHash = transaction.hash.slice(0, 4) + '...' + transaction.hash.slice(-4);
+    const shortHash =
+      transaction.hash.slice(0, 6) + "..." + transaction.hash.slice(-4);
     console.log(`Transaction ${shortHash} on ${date} cost ${txCostUSD} USD`);
     const transactionData = {
-        hash: transaction.hash,
-        shortHash,
-        date,
-        gasPrice: (gasPrice / 1000000000).toString(),
-        gasUsed: gasUsed.toString(),
-        txCostUSD,
-        totalCost
-      };
-        updateData(transactionData);
-
-  }
-  return transactionData;
+      hash: transaction.hash,
+      shortHash,
+      date,
+      gasPrice: (gasPrice / 1000000000).toString(),
+      gasUsed,
+      txCostUSD,
+      totalCost,
+    };
+    updateData(transactionData);
+  });
+  //   return transactionData;
 }
 
 function TransactionsTable() {
@@ -86,6 +93,7 @@ function TransactionsTable() {
       <table>
         <thead>
           <tr>
+            <th>#</th>
             <th>Transaction Hash</th>
             <th>Date</th>
             <th>Gas Price (GWEI)</th>
@@ -96,9 +104,11 @@ function TransactionsTable() {
         <tbody>
           {data.map((transaction, index) => (
             <tr key={index}>
+                <td>{index + 1}</td>
+
               <td>
                 <a
-                  href={`https://etherscan.io/tx/${transaction.hash}`}
+                  href={`https://zkatana.blockscout.com//tx/${transaction.hash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
